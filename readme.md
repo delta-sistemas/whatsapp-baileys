@@ -1,5 +1,3 @@
----
-
 ### Estrutura do Projeto
 
 ```
@@ -35,8 +33,6 @@ src/
 │
 └── index.js              # Ponto de entrada da aplicação
 ```
-
----
 
 ### Descrição das Pastas
 
