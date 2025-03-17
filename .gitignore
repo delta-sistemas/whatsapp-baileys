@@ -1,0 +1,7 @@
+# folders
+node_modules/
+states/
+
+# files
+pnpm-lock.yaml
+package-lock.json

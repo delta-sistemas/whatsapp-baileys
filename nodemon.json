@@ -1,0 +1,5 @@
+{
+    "ignore": ["states/**"],
+    "watch": ["src/**"],
+    "ext": "js,json,ts"
+  }
