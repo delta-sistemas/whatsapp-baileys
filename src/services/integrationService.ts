@@ -1,5 +1,32 @@
-import { access, rm, unlink } from 'fs/promises';
+import { access, rm, unlink, mkdir } from 'fs/promises';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { whatsappService } from './whatsappService';
+
+// Função para criar nova integração
+export const createIntegrationService = async (qrCallback?: (qr: string) => void) => {
+    try {
+        // Gera um UUID único para a nova integração
+        const uuid = uuidv4();
+        
+        // Cria o diretório para armazenar o estado
+        const statePath = `./states/${uuid}`;
+        await mkdir(statePath, { recursive: true });
+        
+        // Inicia a conexão WhatsApp com callback para QR code
+        await whatsappService.startConnection(uuid, qrCallback);
+        
+        console.log(`Nova integração criada com UUID: ${uuid}`);
+        
+        return {
+            uuid,
+            status: 'pending',
+            message: 'Integração criada. Aguardando QR code...'
+        };
+    } catch (error: any) {
+        throw new Error(`Erro ao criar integração: ${error.message}`);
+    }
+};
 
 // Função para deletar a integração
 export const deleteIntegrationService = async (uuid: string) => {

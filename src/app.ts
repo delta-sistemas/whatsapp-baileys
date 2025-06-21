@@ -1,9 +1,10 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import router from './routes';
 import { Server } from 'socket.io';
 import { whatsappService } from './services/whatsappService';
+import { createIntegrationService } from './services/integrationService';
 import { createServer } from 'node:http';
-import { listSubdirectories } from './listStates';
+import { listSubdirectories } from './utils/listStates';
 
 
 async function initializeConnections() {
@@ -36,11 +37,43 @@ const io = new Server(server, {
 const WS_PORT = 3030;
 
 io.on('connection', (socket) => {
-  socket.on('message', (msg) => {
-    console.log(msg)
-  })
-  console.log('a user connected', );
+  console.log('Usuário conectado:', socket.id);
+
+  // Evento para criar nova integração via WebSocket
+  socket.on('integration-create', async () => {
+    try {
+      // Callback para emitir o QR code quando gerado
+      const qrCallback = (qr: string) => {
+        socket.emit('qr-code', { qr });
+      };
+
+      // Cria nova integração
+      const result = await createIntegrationService(qrCallback);
+      
+      // Emite o resultado da criação // NAO SEI SE FUNCIONA ESTA PARTE --> TESTAR
+      socket.emit('integration-created', result);
+      
+    } catch (error: any) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  // Evento para deletar integração
+  socket.on('integration-delete', async (data) => {
+    try {
+      const { uuid } = data;
+      // Implementar lógica de deletar integração
+      socket.emit('integration-deleted', { uuid });
+    } catch (error: any) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Usuário desconectado:', socket.id);
+  });
 });
+
 server.listen(WS_PORT, () => {
-  console.log(`ws running at http://localhost:${WS_PORT}`);
+  console.log(`WebSocket rodando na porta ${WS_PORT}`);
 });
