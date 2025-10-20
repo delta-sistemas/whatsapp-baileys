@@ -1,7 +1,6 @@
-import makeWASocket, { Browsers, DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import makeWASocket, { Browsers, DisconnectReason, useMultiFileAuthState } from "baileys";
 import { Boom } from "@hapi/boom";
 import fs from 'fs/promises';
-var QRCode = require('qrcode')
 
 class WhatsAppService {
     private activeConnections: Map<string, ReturnType<typeof makeWASocket>> = new Map();
@@ -79,6 +78,19 @@ class WhatsAppService {
 
     public getActiveConnections() {
         return Array.from(this.activeConnections.keys());
+    }
+
+    public async sendMessage(uuid: string, phone: string, message: string) {
+        const sock = this.activeConnections.get(uuid);
+        if (!sock) {
+            throw new Error('Integração não conectada ou inexistente.');
+        }
+        const digits = (phone || '').replace(/\D/g, '');
+        if (!digits) {
+            throw new Error('Telefone inválido.');
+        }
+        const jid = `${digits}@s.whatsapp.net`;
+        return await sock.sendMessage(jid, { text: message });
     }
 }
 

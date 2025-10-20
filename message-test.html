@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste POST /message</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 720px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    label { display: block; margin-top: 12px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    textarea { min-height: 100px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .actions { margin-top: 16px; display: flex; gap: 12px; align-items: center; }
+    button { background: #25D366; color: #fff; border: 0; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    button:hover { background: #128C7E; }
+    .status { margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px; white-space: pre-wrap; background: #f8f9fa; border: 1px solid #dee2e6; }
+    .small { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Teste de Envio de Mensagem</h2>
+    <p class="small">Envie uma requisição para <code>POST http://localhost:3000/message</code> com <code>uuid</code>, <code>phone</code> e <code>message</code>.</p>
+
+    <label for="baseUrl">Base URL</label>
+    <input id="baseUrl" type="text" value="http://localhost:3000" />
+
+    <div class="row">
+      <div>
+        <label for="uuid">UUID da Integração</label>
+        <input id="uuid" type="text" placeholder="ex: 3f6c0f2a-..." />
+      </div>
+      <div>
+        <label for="phone">Telefone (apenas dígitos)</label>
+        <input id="phone" type="text" placeholder="ex: 5511999998888" />
+      </div>
+    </div>
+
+    <label for="message">Mensagem</label>
+    <textarea id="message" placeholder="Digite sua mensagem..."></textarea>
+
+    <div class="actions">
+      <button id="send">Enviar Mensagem</button>
+      <span id="hint" class="small"></span>
+    </div>
+
+    <div id="output" class="status"></div>
+  </div>
+
+  <script>
+    const baseUrl = document.getElementById('baseUrl');
+    const uuid = document.getElementById('uuid');
+    const phone = document.getElementById('phone');
+    const message = document.getElementById('message');
+    const sendBtn = document.getElementById('send');
+    const output = document.getElementById('output');
+    const hint = document.getElementById('hint');
+
+    function setStatus(text) { output.textContent = text; }
+
+    sendBtn.addEventListener('click', async () => {
+      const url = (baseUrl.value || '').trim().replace(/\/$/, '') + '/message';
+      const data = {
+        uuid: (uuid.value || '').trim(),
+        phone: (phone.value || '').trim(),
+        message: (message.value || '').trim()
+      };
+
+      if (!data.uuid || !data.phone || !data.message) {
+        setStatus('Preencha uuid, phone e message.');
+        return;
+      }
+
+      setStatus('Enviando...');
+      hint.textContent = '';
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const json = await res.json().catch(() => ({}));
+        setStatus((res.ok ? 'OK' : 'ERRO ' + res.status) + '\n' + JSON.stringify(json, null, 2));
+      } catch (err) {
+        setStatus('Falha na requisição: ' + (err && err.message ? err.message : String(err)));
+      }
+    });
+  </script>
+</body>
+</html>
