@@ -72,8 +72,7 @@ socket.emit('create-integration');
 
 // Receber QR code
 socket.on('qr-code', (data) => {
-    console.log('QR Code:', data.qr);
-    // Gerar QR code visual aqui
+    console.log('\n############\nQR Code:\n############\n', data.qr);
 });
 
 // Receber confirmação de criação

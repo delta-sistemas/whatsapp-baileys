@@ -39,6 +39,13 @@ class WhatsAppService {
                         this.qrCallbacks.delete(uuid);
                     }
                 }             
+                // Caso específico recomendado pelo Baileys: restartRequired
+                if (connection === 'close' && (lastDisconnect?.error as Boom)?.output?.statusCode === DisconnectReason.restartRequired) {
+                    console.log(`Connection requires restart for ${uuid}. Recreating socket...`);
+                    // cria um novo socket; este atual torna-se inútil
+                    this.startConnection(uuid);
+                    return;
+                }
                 if (connection === 'close') {
                     const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
                     console.log(`Connection closed for ${uuid}. Reconnecting: ${shouldReconnect}`);
@@ -55,7 +62,7 @@ class WhatsAppService {
 
             sock.ev.on('messages.upsert', (m) => {
                 // IMPLEMENTAR LOGICA DE ENVIO PARA API DE DADOS
-                console.log(`Message from ${m.messages[0].key.remoteJid}: ${m.messages[0].message?.extendedTextMessage?.text}`);
+                console.log(`LEITURA DE MENSAGENS: ${m.messages[0].key.remoteJid}: ${m.messages[0].message?.extendedTextMessage?.text}`);
             });
 
             this.activeConnections.set(uuid, sock);
@@ -89,7 +96,13 @@ class WhatsAppService {
         if (!digits) {
             throw new Error('Telefone inválido.');
         }
-        const jid = `${digits}@s.whatsapp.net`;
+        // Verifica no WhatsApp e utiliza o jid retornado se existir
+        const lookup = await sock.onWhatsApp(digits).catch(() => [] as any[]);
+        const entry = Array.isArray(lookup) ? lookup.find((e: any) => e?.exists) : null;
+        if (!entry) {
+            throw new Error('O número informado não está no WhatsApp.');
+        }
+        const jid = entry.jid || `${digits}@s.whatsapp.net`;
         return await sock.sendMessage(jid, { text: message });
     }
 }
