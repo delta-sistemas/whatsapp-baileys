@@ -53,6 +53,10 @@ nssm set "%SERVICE_NAME%" Start SERVICE_AUTO_START
 nssm set "%SERVICE_NAME%" AppStdout "%LOG_DIR%\%SERVICE_NAME%-stdout.log"
 nssm set "%SERVICE_NAME%" AppStderr "%LOG_DIR%\%SERVICE_NAME%-stderr.log"
 nssm set "%SERVICE_NAME%" AppRestartDelay 10000
+nssm set "%SERVICE_NAME%" AppRotateFiles 1
+nssm set "%SERVICE_NAME%" AppRotateOnline 1
+nssm set "%SERVICE_NAME%" AppRotateSeconds 86400
+nssm set "%SERVICE_NAME%" AppRotateBytes 10485760
 
 :: Configurar dependencias com tratamento robusto
 echo Configurando dependencias...
