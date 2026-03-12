@@ -108,11 +108,14 @@
         </button>
 
         <div id="qrContainer" class="qr-container" style="display: none;">
-            <h3>QR Code para Conectar WhatsApp</h3>
-            <p>Copie o código abaixo e use em um gerador de QR code online:</p>
-            <div id="qrText" class="qr-text"></div>
-            <button id="copyQR" class="copy-button">Copiar QR Code</button>
-            <p><small>Dica: Use sites como <a href="https://qr-code-generator.com/" target="_blank">qr-code-generator.com</a> para gerar o QR code visual</small></p>
+            <h3>Escaneie o QR Code</h3>
+            <p>Abra o WhatsApp no seu celular > Configurações > Dispositivos Conectados > Conectar um dispositivo.</p>
+            <div id="qrImageWrapper" style="margin: 20px 0;">
+                <img id="qrImage" src="" alt="QR Code" style="display: none; margin: 0 auto; border: 10px solid white; border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                <div id="qrLoading" style="padding: 40px;">Gerando QR Code...</div>
+            </div>
+            <div id="qrText" class="qr-text" style="display: none;"></div>
+            <button id="copyQR" class="copy-button">Copiar Código Base64</button>
         </div>
 
         <div id="integrationInfo" style="display: none;">
@@ -140,6 +143,8 @@
         const statusEl = document.getElementById('status');
         const createBtn = document.getElementById('createIntegration');
         const qrContainer = document.getElementById('qrContainer');
+        const qrImage = document.getElementById('qrImage');
+        const qrLoading = document.getElementById('qrLoading');
         const qrTextEl = document.getElementById('qrText');
         const copyQRBtn = document.getElementById('copyQR');
         const integrationInfo = document.getElementById('integrationInfo');
@@ -211,10 +216,31 @@
 
         socket.on('qr-code', (data) => {
             qrContainer.style.display = 'block';
+            qrLoading.style.display = 'none';
+            qrImage.style.display = 'block';
+            
+            // Usando a API solicitada pelo usuário para gerar a imagem do QR code
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(data.qr)}`;
+            qrImage.src = qrUrl;
             qrTextEl.textContent = data.qr;
             
-            log(`QR code recebido: ${data.qr.substring(0, 20)}...`);
-            updateStatus('QR code recebido! Copie o código acima', 'success');
+            log(`QR code recebido/atualizado.`);
+            updateStatus('QR Code pronto para ler!', 'success');
+        });
+
+        socket.on('connection-status', (data) => {
+            log(`Status da conexão para ${data.uuid}: ${data.status}`);
+            integrationStatus.textContent = data.status;
+            
+            if (data.status === 'open') {
+                qrContainer.style.display = 'none';
+                updateStatus('Conectado com sucesso!', 'success');
+                log('WhatsApp conectado!');
+            } else if (data.status === 'connecting') {
+                updateStatus('Tentando reconectar...', 'info');
+            } else if (data.status === 'close') {
+                updateStatus('Conexão fechada', 'error');
+            }
         });
 
         socket.on('error', (data) => {

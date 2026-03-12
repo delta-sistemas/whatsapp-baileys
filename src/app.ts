@@ -50,10 +50,15 @@ io.on('connection', (socket) => {
         socket.emit('qr-code', { qr });
       };
 
+      // Callback para emitir atualizações de status da conexão
+      const statusCallback = (status: string, uuid: string) => {
+        socket.emit('connection-status', { status, uuid });
+      };
+
       // Cria nova integração
-      const result = await createIntegrationService(qrCallback);
+      const result = await createIntegrationService(qrCallback, statusCallback);
       
-      // Emite o resultado da criação // NAO SEI SE FUNCIONA ESTA PARTE --> TESTAR
+      // Emite o resultado da criação inicial
       socket.emit('integration-created', result);
       
     } catch (error: any) {

@@ -3,7 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { whatsappService } from './whatsappService';
 
 // Função para criar nova integração
-export const createIntegrationService = async (qrCallback?: (qr: string) => void) => {
+export const createIntegrationService = async (
+    qrCallback?: (qr: string) => void,
+    statusCallback?: (status: string, uuid: string) => void
+) => {
     try {
         // Gera um UUID único para a nova integração
         const uuid = uuidv4();
@@ -12,8 +15,8 @@ export const createIntegrationService = async (qrCallback?: (qr: string) => void
         const statePath = `./states/${uuid}`;
         await mkdir(statePath, { recursive: true });
         
-        // Inicia a conexão WhatsApp com callback para QR code
-        await whatsappService.startConnection(uuid, qrCallback);
+        // Inicia a conexão WhatsApp com callbacks para QR code e status
+        await whatsappService.startConnection(uuid, qrCallback, statusCallback);
         
         console.log(`Nova integração criada com UUID: ${uuid}`);
         
