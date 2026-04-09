@@ -5,95 +5,171 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Integration Manager</title>
     <style>
+        :root {
+            --primary: #25D366;
+            --primary-hover: #128C7E;
+            --accent: #3b82f6;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --info: #3b82f6;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
         }
+
         .container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(to right, #25D366, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
         .button {
-            background: #25D366;
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 16px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 16px;
-            margin: 10px 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+            margin: 20px 0;
         }
-        .button:hover {
-            background: #128C7E;
+
+        .button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
         }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #475569;
+            box-shadow: none;
+        }
+
         .qr-container {
             text-align: center;
-            margin: 20px 0;
-            padding: 20px;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
+            margin: 30px 0;
+            padding: 30px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
         }
+
         .status {
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
+            padding: 14px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            border: 1px solid transparent;
         }
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
+
+        .status.success { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.2); }
+        .status.error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
+        .status.info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); }
+
         .qr-text {
-            font-family: monospace;
-            font-size: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
             word-break: break-all;
-            background: #f8f9fa;
+            background: rgba(0, 0, 0, 0.3);
             padding: 15px;
-            border-radius: 4px;
-            margin: 10px 0;
-            border: 1px solid #dee2e6;
-            max-width: 100%;
-            overflow-x: auto;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: var(--text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
         .log {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 10px;
-            max-height: 200px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            height: 150px;
             overflow-y: auto;
-            font-family: monospace;
+            font-family: 'Fira Code', monospace;
             font-size: 12px;
+            color: #818cf8;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
+        .log::-webkit-scrollbar { width: 6px; }
+        .log::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+
         .copy-button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            margin: 10px 0;
+            transition: all 0.2s ease;
         }
-        .copy-button:hover {
-            background: #0056b3;
+
+        .copy-button:hover { background: rgba(59, 130, 246, 0.3); }
+
+        #qr-img {
+            max-width: 220px;
+            border: 10px solid white;
+            border-radius: 12px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .label-info {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .integration-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 16px;
+            margin-top: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
     </style>
+
 </head>
 <body>
     <div class="container">
@@ -107,16 +183,25 @@
             Criar Nova Integração
         </button>
 
-        <div id="qrContainer" class="qr-container" style="display: none;">
+        <div id="qr-image" class="qr-container" style="display: none;">
             <h3>Escaneie o QR Code</h3>
-            <p>Abra o WhatsApp no seu celular > Configurações > Dispositivos Conectados > Conectar um dispositivo.</p>
-            <div id="qrImageWrapper" style="margin: 20px 0;">
-                <img id="qrImage" src="" alt="QR Code" style="display: none; margin: 0 auto; border: 10px solid white; border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-                <div id="qrLoading" style="padding: 40px;">Gerando QR Code...</div>
+            <p class="label-info">Abra o WhatsApp no seu celular > Configurações > Dispositivos Conectados > Conectar um dispositivo.</p>
+            <div id="qrImageWrapper" style="margin: 30px 0;">
+                <img id="qr-img" src="" alt="QR Code" style="display: none;">
+                <div id="qr-loading" style="padding: 40px;">
+                    <span style="display: block; margin-bottom: 15px;">Gerando QR Code...</span>
+                    <!-- Spinner minimalista -->
+                    <div class="spinner" style="width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                </div>
             </div>
             <div id="qrText" class="qr-text" style="display: none;"></div>
             <button id="copyQR" class="copy-button">Copiar Código Base64</button>
         </div>
+
+        <style>
+            @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+
 
         <div id="integrationInfo" style="display: none;">
             <h3>Informações da Integração</h3>
@@ -138,19 +223,40 @@
 
         const socket = io('http://localhost:3030');
         let currentIntegration = null;
+        let isWaiting = false;
+
+        /**
+         * Implementação solicitada pelo usuário para exibir o QR Code
+         */
+        function showQr(qrData) {
+            if (!isWaiting) return;
+            
+            // Chama a API externa passando a string do QR Code codificada na URL
+            const url = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrData)}&t=${Date.now()}`;
+            
+            // Coloca a imagem gerada no elemento <img> do HTML
+            document.getElementById('qr-img').src = url;
+            
+            // Esconde o loading e mostra a imagem
+            document.getElementById('qr-loading').style.display = 'none';
+            document.getElementById('qr-image').style.display = 'block';
+            document.getElementById('qr-img').style.display = 'block'; // Garante que a imagem está visível
+        }
+
 
         // Elementos do DOM
         const statusEl = document.getElementById('status');
         const createBtn = document.getElementById('createIntegration');
-        const qrContainer = document.getElementById('qrContainer');
-        const qrImage = document.getElementById('qrImage');
-        const qrLoading = document.getElementById('qrLoading');
+        const qrImageWrapper = document.getElementById('qr-image');
+        const qrImg = document.getElementById('qr-img');
+        const qrLoading = document.getElementById('qr-loading');
         const qrTextEl = document.getElementById('qrText');
         const copyQRBtn = document.getElementById('copyQR');
         const integrationInfo = document.getElementById('integrationInfo');
         const integrationUUID = document.getElementById('integrationUUID');
         const integrationStatus = document.getElementById('integrationStatus');
         const logEl = document.getElementById('log');
+
 
         function log(message) {
             const timestamp = new Date().toLocaleTimeString();
@@ -206,6 +312,7 @@
 
         socket.on('integration-created', (data) => {
             currentIntegration = data;
+            isWaiting = true; // Define como esperando ao criar a integração
             integrationUUID.textContent = data.uuid;
             integrationStatus.textContent = data.status;
             integrationInfo.style.display = 'block';
@@ -215,33 +322,32 @@
         });
 
         socket.on('qr-code', (data) => {
-            qrContainer.style.display = 'block';
-            qrLoading.style.display = 'none';
-            qrImage.style.display = 'block';
+            // Utiliza a função showQr implementada
+            showQr(data.qr);
             
-            // Usando a API solicitada pelo usuário para gerar a imagem do QR code
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(data.qr)}`;
-            qrImage.src = qrUrl;
-            qrTextEl.textContent = data.qr;
-            
+            qrTextEl.textContent = data.qr; // Mantém o texto para cópia se necessário
             log(`QR code recebido/atualizado.`);
             updateStatus('QR Code pronto para ler!', 'success');
         });
+
 
         socket.on('connection-status', (data) => {
             log(`Status da conexão para ${data.uuid}: ${data.status}`);
             integrationStatus.textContent = data.status;
             
             if (data.status === 'open') {
-                qrContainer.style.display = 'none';
+                isWaiting = false; // Parar de esperar após sucesso
+                qrImageWrapper.style.display = 'none';
                 updateStatus('Conectado com sucesso!', 'success');
                 log('WhatsApp conectado!');
             } else if (data.status === 'connecting') {
                 updateStatus('Tentando reconectar...', 'info');
             } else if (data.status === 'close') {
+                isWaiting = false;
                 updateStatus('Conexão fechada', 'error');
             }
         });
+
 
         socket.on('error', (data) => {
             updateStatus(`Erro: ${data.message}`, 'error');

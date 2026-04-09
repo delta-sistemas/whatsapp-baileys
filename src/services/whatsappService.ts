@@ -1,4 +1,4 @@
-import makeWASocket, { Browsers, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion } from "baileys";
+import makeWASocket, { Browsers, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import fs from 'fs/promises';
 
@@ -7,46 +7,40 @@ class WhatsAppService {
     private qrCallbacks: Map<string, (qr: string) => void> = new Map();
     private statusCallbacks: Map<string, (status: string, uuid: string) => void> = new Map();
 
+
     public async closeConnection(statePath: string) {
         fs.rm(statePath, { recursive: true })
     }
 
-    public async startConnection(uuid: string, qrCallback?: (qr: string) => void, statusCallback?: (status: string, uuid: string) => void) {
+    public async startConnection(
+        uuid: string, 
+        qrCallback?: (qr: string) => void,
+        statusCallback?: (status: string, uuid: string) => void
+    ) {
+
         const statePath = `./states/${uuid}`;
 
-        // Armazena callbacks para este UUID
+        // Se um callback de QR foi fornecido, armazena para este UUID
         if (qrCallback) {
             this.qrCallbacks.set(uuid, qrCallback);
         }
+
+        // Se um callback de status foi fornecido, armazena para este UUID
         if (statusCallback) {
             this.statusCallbacks.set(uuid, statusCallback);
         }
 
-        // Emite status inicial
-        this.statusCallbacks.get(uuid)?.('connecting', uuid);
 
         try {
-            // Limpa conexão anterior se existir para evitar múltiplos listeners
-            const existingSock = this.activeConnections.get(uuid);
-            if (existingSock) {
-                existingSock.ev.removeAllListeners('connection.update');
-                existingSock.ev.removeAllListeners('creds.update');
-                existingSock.ev.removeAllListeners('messages.upsert');
-                try { existingSock.end(undefined); } catch (e) {}
-            }
+            const { version, isLatest } = await fetchLatestBaileysVersion();
+            console.log(`Using WA v${version.join('.')}, isLatest: ${isLatest}`);
 
             const { state, saveCreds } = await useMultiFileAuthState(statePath);
-            const { version, isLatest } = await fetchLatestBaileysVersion();
-            console.log(`[${uuid}] Usando WA v${version.join('.')}, isLatest: ${isLatest}`);
 
             const sock = makeWASocket({
                 version,
                 auth: state,
-                browser: Browsers.ubuntu('Chrome'),
-                printQRInTerminal: false,
-                connectTimeoutMs: 60000,
-                defaultQueryTimeoutMs: 60000,
-                keepAliveIntervalMs: 30000,
+                browser: Browsers.windows('Chrome'),
             });
 
             sock.ev.on('creds.update', saveCreds);
@@ -54,42 +48,42 @@ class WhatsAppService {
             sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
                 if (qr) {
-                    console.log(`[${uuid}] QR Code gerado.`);
                     // Emite o QR code via callback se existir
                     const callback = this.qrCallbacks.get(uuid);
                     if (callback) {
                         callback(qr);
+                        // Não removemos o callback aqui pois o Baileys pode emitir novos QR codes se o anterior expirar
                     }
-                }             
+                }
+
+                if (connection) {
+                    // Emite o status via callback se existir
+                    const callback = this.statusCallbacks.get(uuid);
+                    if (callback) {
+                        callback(connection, uuid);
+                    }
+                }
+
                 // Caso específico recomendado pelo Baileys: restartRequired
                 if (connection === 'close' && (lastDisconnect?.error as Boom)?.output?.statusCode === DisconnectReason.restartRequired) {
                     console.log(`Connection requires restart for ${uuid}. Recreating socket...`);
                     // cria um novo socket; este atual torna-se inútil
-                    this.startConnection(uuid);
+                    this.startConnection(uuid, this.qrCallbacks.get(uuid), this.statusCallbacks.get(uuid));
                     return;
                 }
+
                 if (connection === 'close') {
-                    const error = (lastDisconnect?.error as Boom);
-                    const statusCode = error?.output?.statusCode;
-                    const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-                    
-                    console.log(`Connection CLOSED for ${uuid}. Status: ${statusCode}. Error: ${error?.message}. Data: ${JSON.stringify(error?.data)}`);
+                    const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+                    console.log(`Connection closed for ${uuid}. Reconnecting: ${shouldReconnect}`);
 
                     if (shouldReconnect) {
-                        console.log(`Reconnecting ${uuid} in 3 seconds...`);
-                        setTimeout(() => {
-                            this.startConnection(uuid);
-                        }, 3000);
+                        this.startConnection(uuid, this.qrCallbacks.get(uuid), this.statusCallbacks.get(uuid));
                     } else {
-                        this.statusCallbacks.get(uuid)?.('close', uuid);
+
                         this.stopConnection(uuid);
                     }
                 } else if (connection === 'open') {
                     console.log(`Connection opened for ${uuid}`);
-                    this.statusCallbacks.get(uuid)?.('open', uuid);
-                    // Remove os callbacks após a conexão ser aberta, pois não haverá mais QR códigos
-                    this.qrCallbacks.delete(uuid);
-                    // Opcional: manter o statusCallback se quiser monitorar quedas de conexão futuras
                 }
             });
 
@@ -110,10 +104,12 @@ class WhatsAppService {
         if (sock) {
             await sock.end(undefined);
             this.activeConnections.delete(uuid);
-            // Remove o callback se existir
+            // Remove os callbacks se existirem
             this.qrCallbacks.delete(uuid);
+            this.statusCallbacks.delete(uuid);
             console.log(`Connection stopped for ${uuid}`);
         }
+
     }
 
     public getActiveConnections() {
